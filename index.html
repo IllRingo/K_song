@@ -2,131 +2,262 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>K歌群专属歌单</title>
     <style>
-        /* CSS 样式保持之前的美化版本 */
-        :root { --primary-color: #ff5e5e; --bg-color: #f7f8fa; --card-bg: #fff; --text-main: #1a1a1a; --text-sub: #8a8a8a; --shadow: 0 4px 12px rgba(0,0,0,0.06); --shadow-hover: 0 8px 24px rgba(255,94,94,0.15); }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding: 16px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { text-align: center; padding: 30px 16px 20px; background: linear-gradient(135deg, #fff 0%, #fff5f5 100%); border-radius: 16px; margin-bottom: 24px; box-shadow: var(--shadow); }
-        .header h1 { font-size: 24px; margin-bottom: 8px; }
-        .action-bar { position: sticky; top: 10px; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 12px 16px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-copy { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 24px; font-size: 14px; cursor: pointer; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-        .card { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); transition: 0.3s; display: flex; flex-direction: column; }
-        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
-        .card-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .song-title { font-size: 18px; font-weight: 700; }
-        .artist { font-size: 14px; color: var(--text-sub); margin-bottom: 12px; }
-        .tag-original { font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-        .tag-original.yes { background: #e8f5e9; color: #2e7d32; }
-        .tag-original.no { background: #fff3e0; color: #ef6c00; }
-        .song-info { background: var(--bg-color); padding: 12px; border-radius: 8px; margin-bottom: 12px; flex-grow: 1; }
-        .info-item { font-size: 13px; margin-bottom: 6px; }
-        .version-note { font-size: 12px; color: #888; font-style: italic; margin-bottom: 12px; padding-left: 8px; border-left: 2px solid #ddd; }
-        .platforms { display: flex; gap: 8px; margin-top: auto; }
-        .platform-btn { flex: 1; text-align: center; text-decoration: none; color: white; padding: 8px 0; border-radius: 8px; font-size: 13px; }
-        .btn-qq { background: #31c27c; }
-        .btn-netease { background: #e60026; }
-        .btn-kugou { background: #2ca2f9; }
-        .loading { text-align: center; padding: 40px; color: var(--text-sub); }
-        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+        :root {
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.6);
+            --accent-color: #ff4d8d;
+            --bg-dark: #0f0c29;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 80px; /* 给底部悬浮栏留空间 */
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 流线型动态背景层 */
+        .bg-animation {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #3a1c5e);
+            background-size: 400% 400%;
+            animation: gradientFlow 15s ease infinite;
+        }
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* 背景光晕装饰 */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+        .blob-1 { width: 300px; height: 300px; background: #ff4d8d; top: -50px; left: -50px; animation: blobMove 8s ease-in-out infinite alternate; }
+        .blob-2 { width: 250px; height: 250px; background: #4d79ff; bottom: 10%; right: -50px; animation: blobMove 10s ease-in-out infinite alternate-reverse; }
+        @keyframes blobMove { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 30px); } }
+
+        /* 顶部区域 */
+        .header {
+            padding: 32px 20px 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 22px; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; }
+        .header p { font-size: 12px; color: var(--text-sub); }
+
+        /* 卡片列表容器 */
+        .list-container {
+            padding: 0 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 单张卡片 - 毛玻璃效果 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            transition: transform 0.2s ease;
+        }
+        .card:active { transform: scale(0.98); }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .song-title { font-size: 17px; font-weight: 600; line-height: 1.3; }
+        .artist { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+        
+        .tag {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .tag-original { background: rgba(46, 125, 50, 0.3); color: #81c784; border: 1px solid rgba(46, 125, 50, 0.5); }
+        .tag-cover { background: rgba(239, 108, 0, 0.3); color: #ffb74d; border: 1px solid rgba(239, 108, 0, 0.5); }
+
+        .card-info {
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-row { display: flex; margin-bottom: 4px; }
+        .info-label { color: var(--text-sub); margin-right: 6px; min-width: 60px; }
+        
+        .recommender { font-size: 11px; color: var(--text-sub); text-align: right; margin-bottom: 10px; }
+
+        /* 听歌平台按钮 */
+        .platforms { display: flex; gap: 8px; }
+        .platform-btn {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            padding: 7px 0;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .platform-btn:active { opacity: 0.7; }
+        .btn-qq { background: rgba(49, 194, 124, 0.8); }
+        .btn-netease { background: rgba(230, 0, 38, 0.8); }
+        .btn-kugou { background: rgba(44, 162, 249, 0.8); }
+
+        /* 底部悬浮操作栏 */
+        .footer-bar {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(15, 12, 41, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--card-border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        .footer-text { font-size: 13px; color: var(--text-sub); }
+        .footer-text strong { color: var(--accent-color); }
+        .btn-copy {
+            background: linear-gradient(135deg, #ff4d8d 0%, #ff6b6b 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 77, 141, 0.4);
+        }
+
+        .loading { text-align: center; padding: 60px 0; color: var(--text-sub); font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎤 K歌群专属公共歌单</h1>
-            <p>数据实时同步自飞书多维表格</p>
-        </div>
-        <div class="action-bar">
-            <span>共收录 <strong id="songCount">...</strong> 首歌曲</span>
-            <button class="btn-copy" onclick="copySongList()">📋 一键复制导入歌单</button>
-        </div>
-        <div class="grid" id="songGrid">
-            <div class="loading">正在从飞书拉取最新歌单...</div>
-        </div>
+    <!-- 动态背景元素 -->
+    <div class="bg-animation"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="header">
+        <h1>🎤 K歌群专属歌单</h1>
+        <p>精选好曲，随时开唱</p>
+    </div>
+
+    <div class="list-container" id="songList">
+        <div class="loading">正在从云端拉取最新歌单...</div>
+    </div>
+
+    <div class="footer-bar">
+        <span class="footer-text">共 <strong id="songCount">0</strong> 首歌曲</span>
+        <button class="btn-copy" onclick="copySongList()">📋 一键导入歌单</button>
     </div>
 
     <script>
-        // 飞书多维表格里“音乐平台”字段，我假设大家填的是文本，比如 "qq" 或 "netease,kugou"
-        // 如果没有填，默认给全平台
-        const platformConfig = {
-            qq: { name: "QQ音乐", class: "btn-qq", url: (q) => `https://y.qq.com/n/ryqq/search?w=${q}` },
-            netease: { name: "网易云", class: "btn-netease", url: (q) => `https://music.163.com/#/search/m/?s=${q}&type=1` },
-            kugou: { name: "酷狗", class: "btn-kugou", url: (q) => `https://www.kugou.com/search.php?keyword=${q}` }
-        };
+        let globalSongs = [];
 
-        let globalSongList = [];
-
-        // 页面加载时调用 Vercel 的 API 获取数据
         async function loadData() {
             try {
-                // 注意这里的路径，部署后会被替换为你的 Vercel 域名
-                const res = await fetch('/api/songs'); 
+                const res = await fetch('/api/songs');
                 const result = await res.json();
-                
                 if (result.code === 0) {
-                    globalSongList = result.data;
-                    renderCards();
+                    globalSongs = result.data;
+                    renderList();
                 } else {
                     throw new Error(result.msg);
                 }
             } catch (error) {
-                document.getElementById('songGrid').innerHTML = `<div class="loading" style="color:red;">数据加载失败: ${error.message}</div>`;
+                document.getElementById('songList').innerHTML = `<div class="loading" style="color:#ff4d8d;">加载失败: ${error.message}<br>请检查飞书配置</div>`;
             }
         }
 
-        function renderCards() {
-            const grid = document.getElementById('songGrid');
-            document.getElementById('songCount').innerText = globalSongList.length;
+        function renderList() {
+            const container = document.getElementById('songList');
+            document.getElementById('songCount').innerText = globalSongs.length;
 
-            grid.innerHTML = globalSongList.map(song => {
+            if (globalSongs.length === 0) {
+                container.innerHTML = '<div class="loading">暂无歌曲数据</div>';
+                return;
+            }
+
+            container.innerHTML = globalSongs.map(song => {
                 const query = encodeURIComponent(`${song.name} ${song.artist}`);
-                const originalTag = song.isOriginal === "原唱" 
-                    ? `<span class="tag-original yes">原唱</span>` 
-                    : `<span class="tag-original no">翻唱</span>`;
-
-                const sceneTag = song.scene ? `<span class="tag-scene" style="display:inline-block;font-size:12px;padding:2px 6px;background:#f0f1f3;border-radius:4px;">🏷️ ${song.scene}</span>` : '';
-                const versionNote = song.versionNote ? `<div class="version-note">📝 ${song.versionNote}</div>` : '';
-
-                // 解析平台字段，支持逗号分隔
-                let platforms = song.platform ? song.platform.split(',').map(p => p.trim()) : ['qq', 'netease'];
-                let platformBtns = platforms.map(p => {
-                    const conf = platformConfig[p];
-                    if (!conf) return '';
-                    return `<a href="${conf.url(query)}" target="_blank" class="platform-btn ${conf.class}">${conf.name}</a>`;
-                }).join('');
-
+                const tagClass = song.isOriginal === "原唱" ? "tag-original" : "tag-cover";
+                
                 return `
                     <div class="card">
                         <div class="card-head">
                             <div>
                                 <div class="song-title">${song.name}</div>
-                                <div class="artist">歌手：${song.artist}</div>
+                                <div class="artist">${song.artist}</div>
                             </div>
-                            ${originalTag}
+                            <span class="tag ${tagClass}">${song.isOriginal}</span>
                         </div>
-                        <div class="song-info">
-                            <div class="info-item" style="margin-bottom:8px;">${sceneTag}</div>
-                            <div class="info-item"><span style="color:#8a8a8a;">💡 推荐理由：</span>${song.reason || '暂无'}</div>
+                        
+                        <div class="card-info">
+                            ${song.scene ? `<div class="info-row"><span class="info-label">适用场景</span><span>${song.scene}</span></div>` : ''}
+                            ${song.reason ? `<div class="info-row"><span class="info-label">推荐理由</span><span>${song.reason}</span></div>` : ''}
                         </div>
-                        ${versionNote}
-                        <div class="platforms">${platformBtns}</div>
+
+                        <div class="recommender">—— 由 ${song.recommender} 推荐</div>
+
+                        <div class="platforms">
+                            <a href="https://y.qq.com/n/ryqq/search?w=${query}" target="_blank" class="platform-btn btn-qq">QQ音乐</a>
+                            <a href="https://music.163.com/#/search/m/?s=${query}&type=1" target="_blank" class="platform-btn btn-netease">网易云</a>
+                            <a href="https://www.kugou.com/search.php?keyword=${query}" target="_blank" class="platform-btn btn-kugou">酷狗</a>
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
         function copySongList() {
-            if (globalSongList.length === 0) return alert('歌单还在加载中...');
-            const textToCopy = globalSongList.map(s => `${s.name} - ${s.artist}`).join('\n');
-            navigator.clipboard.writeText(textToCopy).then(() => alert('✅ 歌单已复制！\n请打开QQ音乐或网易云音乐，找到“导入外部歌单”功能，粘贴即可。'));
+            if (globalSongs.length === 0) return alert('歌单还在加载中...');
+            const text = globalSongs.map(s => `${s.name} - ${s.artist}`).join('\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ 歌单文本已复制！\n\n请打开QQ音乐或网易云音乐，找到“导入外部歌单”功能，粘贴即可生成你的专属练歌列表。');
+            }).catch(() => {
+                // 降级方案
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                alert('✅ 歌单文本已复制！');
+            });
         }
 
-        // 启动
         loadData();
     </script>
 </body>
