@@ -11,27 +11,35 @@ export async function onRequestGet(context) {
     const tokenData = await tokenRes.json();
     const token = tokenData.tenant_access_token;
 
-    // 2. 获取多维表格数据 (默认拉取前100条，如需更多需分页)
-    const url = `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_APP_TOKEN}/tables/${FEISHU_TABLE_ID}/records?page_size=100`;
-    const recordRes = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const recordData = await recordRes.json();
+    // 2. 循环获取所有数据 (支持分页，防止歌单超过100首丢失)
+    let allItems = [];
+    let pageToken = undefined;
+    do {
+      let url = `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_APP_TOKEN}/tables/${FEISHU_TABLE_ID}/records?page_size=100`;
+      if (pageToken) url += `&page_token=${pageToken}`;
+      
+      const recordRes = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+      const recordData = await recordRes.json();
+      
+      if (recordData.code !== 0) throw new Error(recordData.msg || '飞书数据获取失败');
+      
+      allItems = allItems.concat(recordData.data.items);
+      pageToken = recordData.data.has_more ? recordData.data.page_token : undefined;
+    } while (pageToken);
 
-    if (recordData.code !== 0) {
-      throw new Error(recordData.msg || '飞书数据获取失败');
-    }
-
-    // 3. 清洗数据 (字段名必须与飞书多维表格完全一致)
-    const cleanData = recordData.data.items.map(item => {
+    // 3. 清洗数据
+    const cleanData = allItems.map(item => {
       const f = item.fields;
       return {
+        id: item.record_id, // 保留记录ID，用于点赞接口
         name: f['歌曲名'] || '未知歌曲',
         artist: f['歌手名'] || '未知歌手',
         isOriginal: f['是否原唱'] || '原唱',
         reason: f['推荐理由'] || '',
         scene: f['适用场景'] || '',
-        recommender: f['推荐人'] || '神秘人'
+        recommender: f['推荐人'] || '神秘人',
+        likes: parseInt(f['喜欢']) || 0, // 读取喜欢数
+        createdAt: item.created_time || 0 // 读取创建时间戳(毫秒)
       };
     });
 
@@ -41,8 +49,7 @@ export async function onRequestGet(context) {
 
   } catch (error) {
     return new Response(JSON.stringify({ code: -1, msg: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      status: 500, headers: { 'Content-Type': 'application/json' }
     });
   }
 }
